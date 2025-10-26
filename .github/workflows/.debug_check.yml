@@ -1,7 +1,7 @@
-name: Debug Volleyball Script
+name: Debug Volleyball Kurs Check
 
 on:
-  workflow_dispatch:  # erlaubt manuelles Starten
+  workflow_dispatch:  # manuelles Starten erlaubt
 
 jobs:
   run-debug:
@@ -18,5 +18,12 @@ jobs:
       - name: Install dependencies
         run: pip install requests beautifulsoup4
 
-      - name: Run debug script
+      - name: Run Kurscheck
         run: python check_volleyball.py
+
+      - name: Upload debug HTML as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug_html_output
+          path: debug_output.html
