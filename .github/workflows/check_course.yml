@@ -1,0 +1,32 @@
+name: Check Volleyball Course
+
+on:
+  schedule:
+    - cron: "0 */3 * * *"  # alle 3 Stunden prüfen
+  workflow_dispatch:  # manuell starten möglich
+
+jobs:
+  check-course:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Run check
+        id: check
+        run: python check_volleyball.py
+
+      - name: Send Discord Notification
+        if: success()  # nur wenn Platz frei
+        run: |
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d "{\"content\": \"🏐 **Ein Platz im Volleyballkurs ist frei geworden!** 🔥\n${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
+               ${{ secrets.DISCORD_WEBHOOK }}
