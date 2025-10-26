@@ -1,14 +1,29 @@
 import requests
 from bs4 import BeautifulSoup
 
-URL = "https://campus.uni-ulm.de/qisserver/rds?state=wsearchv&search=1&veranstaltung.veranstid=12345"  # <-- hier deine Kurs-URL
+URL = "https://cloud.aktivkonzepte.de/hspulm/kurse.html##/Home/Kurs/683"
 
 def kurs_frei():
-    r = requests.get(URL)
+    # Header für realistischen Request (manche Seiten blocken "Bot"-Anfragen)
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    }
+
+    # Seite abrufen
+    r = requests.get(URL, headers=headers)
+    if r.status_code != 200:
+        print(f"⚠️ Fehler beim Abruf: {r.status_code}")
+        return False
+
+    # HTML analysieren
     soup = BeautifulSoup(r.text, "html.parser")
     text = soup.get_text().lower()
-    # Wenn "keine plätze frei" NICHT vorkommt, ist der Kurs frei
-    return "keine plätze frei" not in text and "belegt" not in text
+
+    # Prüfen, ob „ausgebucht“ oder „belegt“ vorkommt
+    if "ausgebucht" in text or "belegt" in text:
+        return False
+    else:
+        return True
 
 if __name__ == "__main__":
     if kurs_frei():
