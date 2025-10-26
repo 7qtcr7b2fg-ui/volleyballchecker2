@@ -1,38 +1,40 @@
-import requests
-from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright
+import time
 
 URL = "https://cloud.aktivkonzepte.de/hspulm/kurse.html#/Home/Kurs/683"
 
 def kurs_frei():
-    headers = {"User-Agent": "Mozilla/5.0"}
-    r = requests.get(URL, headers=headers)
-    print(f"Status Code: {r.status_code}")
+    print("🚀 Starte Headless-Browser...")
+    with sync_playwright() as p:
+        browser = p.firefox.launch(headless=True)
+        page = browser.new_page()
 
-    if r.status_code != 200:
-        print("❌ Fehler beim Abrufen der Seite.")
-        return False
+        print("🌐 Lade Seite...")
+        page.goto(URL, wait_until="networkidle")
 
-    # HTML speichern, um später nachzusehen
-    with open("debug_output.html", "w", encoding="utf-8") as f:
-        f.write(r.text)
+        # kurz warten, damit die Seite ihren JS-Inhalt lädt
+        time.sleep(5)
 
-    soup = BeautifulSoup(r.text, "html.parser")
-    text = soup.get_text().lower()
+        content = page.content().lower()
 
-    # Prüfen, ob der Kursname auftaucht
-    if "volleyball techniktraining" in text:
-        print("🏐 Kurs 'Volleyball Techniktraining' gefunden.")
+        # Debug speichern
+        with open("debug_rendered.html", "w", encoding="utf-8") as f:
+            f.write(content)
 
-        # Nun prüfen, ob dort 'ausgebucht' steht
-        if "ausgebucht" in text:
-            print("❌ Der Kurs ist AUSGEBUCHT.")
-            return False
+        browser.close()
+
+        if "volleyball techniktraining" in content:
+            print("🏐 Kurs 'Volleyball Techniktraining' gefunden!")
+
+            if "ausgebucht" in content:
+                print("❌ Kurs ist AUSGEBUCHT.")
+                return False
+            else:
+                print("✅ Kurs ist FREI!")
+                return True
         else:
-            print("✅ Der Kurs ist FREI!")
-            return True
-    else:
-        print("⚠️ Kein Kurs namens 'Volleyball Techniktraining' gefunden.")
-        return False
+            print("⚠️ Kein Volleyballkurs gefunden.")
+            return False
 
 if __name__ == "__main__":
     kurs_frei()
