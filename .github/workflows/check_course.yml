@@ -1,15 +1,17 @@
-name: Check Volleyball Course
+name: Volleyball Kurs Checker (Playwright)
 
 on:
   schedule:
     - cron: "0 */3 * * *"  # alle 3 Stunden prüfen
-  workflow_dispatch:  # manuell starten möglich
+  workflow_dispatch:       # manuell startbar
 
 jobs:
-  check-course:
+  check-volleyball:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -17,16 +19,25 @@ jobs:
           python-version: "3.10"
 
       - name: Install dependencies
-        run: pip install requests beautifulsoup4
+        run: |
+          pip install playwright
+          playwright install --with-deps firefox
 
-      - name: Run check
-        id: check
+      - name: Run volleyball check
+        id: runcheck
         run: python check_volleyball.py
+
+      - name: Upload rendered HTML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered_html_debug
+          path: debug_rendered.html
 
       - name: Send Discord Notification
         if: success()  # nur wenn Platz frei
         run: |
           curl -H "Content-Type: application/json" \
                -X POST \
-               -d "{\"content\": \"🏐 **Ein Platz im Volleyballkurs ist frei geworden!** 🔥\n${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
+               -d "{\"content\": \"🏐 **Volleyball Techniktraining ist FREI geworden!** 🔥\n${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
                ${{ secrets.DISCORD_WEBHOOK }}
